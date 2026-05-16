@@ -144,7 +144,7 @@ class DiscourseClassifier:
             # Only fire retórica when there is no governance context
             if has_systemic_threat and not has_governance:
                 return {"label": "retórica antidemocrática", "score": 1.0}
-            if has_institution and has_insult and not has_governance:
+            if has_institution and has_insult and has_systemic_threat and not has_governance:
                 return {"label": "retórica antidemocrática", "score": 1.0}
 
         # 4. Bare insult directed at a political target
