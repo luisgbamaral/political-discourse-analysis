@@ -69,7 +69,7 @@ def load_classification_data() -> pl.DataFrame:
 def render_header():
     st.title(f"{PAGE_ICON} {PAGE_TITLE}")
     st.markdown("""
-    ### Auditing Democracy — NLP Analysis of the 2022 Brazilian Presidential Election
+    ### Auditing Democracy: NLP Analysis of the 2022 Brazilian Presidential Election
 
     The 2022 Brazilian election was defined by unprecedented polarization. This project addresses a core methodological challenge: standard sentiment analysis cannot distinguish *legitimate political opposition* from *genuinely antidemocratic rhetoric* — both read as "negative," but only one represents a systemic threat to institutions.
 
@@ -85,7 +85,7 @@ def render_header():
     | Política econômica | Economic policy announcements or commentary |
     | Neutro | Informational or ceremonial content with no strong political valence |
 
-    The classification uses **AKD (Active Knowledge Distillation)**, which combines two principles: knowledge distillation, where a *student* model is trained to approximate a larger *teacher* (Hinton et al., 2015); and active learning, which selects only the most informative samples for labeling (Luccioli et al., 2025). In practice: (1) **XLM-R** — a multilingual model that can classify text into categories without prior examples, by comparing each post against plain-language descriptions of each class — labels the full corpus and assigns a confidence score; (2) posts where the model is least confident are sent to a frontier **LLM** (`claude-opus-4-7`) acting as *teacher*, which annotates those cases; (3) the consolidated labels fine-tune **BERTimbau** — a language model pre-trained on large volumes of Brazilian Portuguese text and specialized here on the Telegram corpus. A set of **pattern-matching rules** runs before each neural prediction to resolve authorship ambiguity: words like *disse, afirmou, declarou* signal that the channel is reporting someone else's words (accusation); negations like *não, bloqueou, impediu* signal that the channel is criticizing an action (also accusation). Without this step, the phrase *"O Bolsonaro quer invadir o STF"* — identical in threat-level vocabulary to direct rhetoric — would be misclassified.
+    The classification uses **AKD (Active Knowledge Distillation)**, which combines two principles: knowledge distillation, where a *student* model is trained to approximate a larger *teacher* (Hinton et al., 2015); and active learning, which selects only the most informative samples for labeling (Luccioli et al., 2025). In practice: (1) **XLM-R** (a multilingual model that can classify text into categories without prior examples, by comparing each post against plain-language descriptions of each class) labels the full corpus and assigns a confidence score; (2) posts where the model is least confident are sent to a frontier **LLM** (`claude-opus-4-7`) acting as *teacher*, which annotates those cases; (3) the consolidated labels fine-tune **BERTimbau**, a language model pre-trained on large volumes of Brazilian Portuguese text and specialized here on the Telegram corpus. A set of **pattern-matching rules** runs before each neural prediction to resolve authorship ambiguity: words like *disse, afirmou, declarou* signal that the channel is reporting someone else's words (accusation); negations like *não, bloqueou, impediu* signal that the channel is criticizing an action (also accusation). Without this step, the phrase *"O Bolsonaro quer invadir o STF"*, despite being identical in threat-level vocabulary to direct rhetoric, would be misclassified.
 
     The **Antidemocratic Discourse Index (ADI)** below measures the intensity and cumulative load of hostile political discourse per candidate — separately tracking antidemocratic accusations and personal attacks, normalized by monthly volume and weighted by model confidence.
     """)
@@ -108,7 +108,7 @@ def render_overview(df_display: pl.DataFrame, df_class: pl.DataFrame):
     st.divider()
     render_index(df_class)
     st.divider()
-    render_findings(df_class)
+    render_findings(df_class, df_display)
 
 
 def render_explorer(df: pl.DataFrame):
@@ -205,7 +205,7 @@ def render_index(df: pl.DataFrame):
         "**sum of confidence scores of posts in the target class ÷ total posts that month × 100**. "
         "Example: if a candidate posts 100 messages in a month and 10 are classified as *ataques políticos* "
         "with average confidence 0.80, the attacks ADI for that month is 10 × 0.80 ÷ 100 × 100 = 8. "
-        "Dividing by total posts removes the effect of posting volume — a candidate who tweets 10× more "
+        "Dividing by total posts removes the effect of posting volume: a candidate who tweets 10× more "
         "is not automatically rated higher; what matters is the *proportion* of posts dedicated to attacks.\n\n"
         "**Reading the chart:** The **bars** (left axis) show the score for each individual month. "
         "The **lines** (right axis) show the running cumulative total since the start of the period — "
@@ -281,63 +281,59 @@ def render_index(df: pl.DataFrame):
     )
 
 
-def render_findings(df: pl.DataFrame):
+def render_findings(df_class: pl.DataFrame, df_display: pl.DataFrame):
     st.header("📋 Research Findings")
 
-    adi = compute_adi(df)
+    adi = compute_adi(df_class)
 
-    # ── Finding 1: Methodological pivot ────────────────────────────────────────────
-    st.subheader("Finding 1 — Official Channels Do Not Employ Direct Antidemocratic Rhetoric")
-    st.markdown("""
+    # Finding 1
+    st.subheader("Finding 1: Official Channels Do Not Employ Direct Antidemocratic Rhetoric")
+
+    rhetoric_posts = df_display.filter(pl.col("label") == "retórica antidemocrática").sort("date")
+    n_rhetoric = rhetoric_posts.height
+    n_word = "post" if n_rhetoric == 1 else "posts"
+    qualifies = "qualifies" if n_rhetoric == 1 else "qualify"
+
+    st.markdown(f"""
     The original hypothesis was that the 2022 Brazilian election was heavily marked by antidemocratic
     discourse, and the initial goal was to **detect and quantify that direct rhetoric** in the
     official Telegram channels.
 
     Under the AKD pipeline, XLM-R zero-shot bootstrapped labels and selected the most uncertain posts
     for the LLM teacher's review. The LLM (`claude-opus-4-7`) systematically reviewed the
-    highest-stakes candidates — posts mentioning the electoral system, military intervention, judicial
-    delegitimization, threats to institutions — and **consistently classified them as accusations**
+    highest-stakes candidates (posts mentioning the electoral system, military intervention, judicial
+    delegitimization, threats to institutions) and **consistently classified them as accusations**
     (attributing antidemocratic behavior to the opponent) rather than as direct rhetoric authored by
     the channel itself.
 
     Manual validation of cases that fell outside the fine-tuning sample confirmed this finding.
     A targeted search covering epistemic attacks on the electoral system, conditional acceptance of
-    results, military mobilization language, and judicial delegitimization found **only 2 posts**
-    that qualify as direct authorial antidemocratic rhetoric across 6,950 messages:
+    results, military mobilization language, and judicial delegitimization found **only {n_rhetoric} {n_word}**
+    that {qualifies} as direct authorial antidemocratic rhetoric across 6,950 messages:
     """)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.info(
-            '**Jun 2021** — *"Como é o voto impresso auditável."*\n\n'
-            'A post framing the auditable printed ballot as a factual given, '
-            'casting institutional doubt on electronic voting — without citing any '
-            'opponent or external source as the origin of the claim.'
-        )
-    with col2:
-        st.info(
-            '**Apr 2021** — *"A CPI que Barroso ordenou instaurar, de forma monocrática... '
-            'Barroso se omite ao não determinar ao Senado a instalação de processos de impeachment... '
-            'Falta-lhe coragem moral e sobra-lhe imprópria militância política."*\n\n'
-            'The channel\'s own verdict on Justice Barroso: accuses him of omission, '
-            'institutional cowardice, and improper political activism — not a report of '
-            'what others said, but a direct institutional attack authored by the channel.'
-        )
+    if n_rhetoric > 0:
+        cols = st.columns(n_rhetoric)
+        for col, row in zip(cols, rhetoric_posts.iter_rows(named=True)):
+            date_str = row["date"].strftime("%b %Y")
+            col.info(f"**{date_str}**\n\n*\"{row['text_en']}\"*\n\nConfidence: {row['score']:.2f}")
+    else:
+        st.info("No posts classified as direct antidemocratic rhetoric in the current corpus.")
 
     st.markdown("""
-    **Conclusion.** Official Telegram channels — almost certainly managed by professional press
-    offices — function as governance and campaign communication platforms. Direct antidemocratic
+    **Conclusion.** Official Telegram channels, almost certainly managed by professional press
+    offices, function as governance and campaign communication platforms. Direct antidemocratic
     rhetoric (live threats, military mobilization calls, outright electoral refusal) was a feature
     of rallies, live broadcasts, and informal interactions that fall outside this corpus.
     The research pivot was therefore necessary: **the phenomenon to be measured is not direct
-    rhetoric but the frequency and intensity of accusations against the adversary** — which proved
+    rhetoric but the frequency and intensity of accusations against the adversary**, which proved
     to be both frequent and quantifiable.
     """)
 
     st.divider()
 
-    # ── Finding 2: ADI comparison ────────────────────────────────────────────
-    st.subheader("Finding 2 — Accusations Against the Opponent Are Frequent and Grow During the Electoral Period")
+    # Finding 2
+    st.subheader("Finding 2: Accusations Against the Opponent Are Frequent and Grow During the Electoral Period")
 
     bol = adi.filter(pl.col("author") == "Bolsonaro")
     lula = adi.filter(pl.col("author") == "Lula")
