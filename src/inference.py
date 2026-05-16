@@ -12,36 +12,55 @@ logger = get_logger("HybridClassifier")
 MODEL_DIR = BASE_DIR / "models" / "bert-large-pt-political"
 
 RX_SYSTEMIC_THREATS = re.compile(
-    r"(?i)\b(golpe|intervenção militar|artigo 142|invadir|tomem o poder|guerra civil|intervenção federal|estado de sítio|estado de exceção|voto impresso)\b"
+    r"(?i)\b("
+    r"golpe\s+de\s+estado|tentativa\s+de\s+golpe|golpe\s+institucional|golpismo|golpista|"
+    r"intervenção\s+militar|artigo\s+142|tomem\s+o\s+poder|guerra\s+civil|"
+    r"intervenção\s+federal|estado\s+de\s+sítio|estado\s+de\s+exceção|voto\s+impresso"
+    r")\b"
 )
 RX_INSTITUTIONS = re.compile(
-    r"(?i)\b(stf|supremo tribunal federal|tse|tribunal eleitoral|alexandre|moraes|xandão|barroso|urna[s]?|voto eletrônico|código.?fonte|sistema eleitoral)\b"
+    r"(?i)\b("
+    r"stf|supremo\s+tribunal\s+federal|tse|tribunal\s+eleitoral|"
+    r"moraes|xandão|barroso|urna[s]?|voto\s+eletrônico|código.{0,2}fonte|sistema\s+eleitoral"
+    r")\b"
 )
-# Phrases that signal direct authorial delegitimization of democratic institutions
+# Direct authorial delegitimization — very specific institutional attack phrases
 RX_DIRECT_RHETORIC = re.compile(
-    r"(?i)(monocrática|imprópria militância política|usurpação de funções|militância política.*ministro|ministro.*militância política)"
+    r"(?i)("
+    r"monocrática|imprópria\s+militância\s+política|usurpação\s+de\s+funções|"
+    r"militância\s+política.{0,20}ministro|ministro.{0,20}militância\s+política"
+    r")"
 )
+# Verbs that attribute a specific antidemocratic action to an actor
 RX_ATTRIBUTION = re.compile(
-    r"(?i)\b(quer|planeja|planejou|tentou|tenta|ameaçou|incentivou|mentiu|ataca|disse|acusou|afirmou|declarou|alegou|prometeu|defende)\b"
+    r"(?i)\b(tentou|tenta|ameaçou|ameaça|incentivou|mentiu|ataca|atacou|acusou|alegou|tramou|tramando)\b"
 )
 RX_POLITICAL_ACTORS = re.compile(
-    r"(?i)\b(bolsonaro|lula|presidente|governo|ministro|político|deputado|senador|candidato|\bpt\b|\bpl\b|esquerda|direita)\b"
+    r"(?i)\b(bolsonaro|lula|presidente|ministro|deputado|senador|candidato|\bpt\b|\bpl\b)\b"
 )
+# Personal insults directed at political figures — restricted to terms rarely used in neutral contexts
 RX_COMMON_INSULTS = re.compile(
-    r"(?i)\b(ladrão|ladrões|corrupto|corrupta|incompetente|genocida|rato|lixo|criminoso|presidiário|pior presidente|vergonha|comunista|fascista|bandido|vagabundo)\b"
+    r"(?i)\b(ladrão|ladrões|corrupto|corrupta|incompetente|genocida|rato|presidiário|pior\s+presidente|vagabundo)\b"
 )
 RX_QUOTE_VERBS = re.compile(
-    r"(?i)\b(disse|afirmou|declarou|postou|twittou|escreveu|revelou|admitiu|segundo|conforme|de acordo com)\b"
+    r"(?i)\b(disse|afirmou|declarou|postou|twittou|escreveu|revelou|admitiu|conforme|de\s+acordo\s+com)\b"
 )
+# Specific negation/opposition verbs — excludes bare "não" which appears in 90%+ of posts
 RX_NEGATION = re.compile(
-    r"(?i)\b(não|nunca|jamais|impediu|bloqueou|evitou|condenou|derrotou|rejeitou|vetou|contra o)\b"
+    r"(?i)\b(nunca|jamais|impediu|bloqueou|evitou|condenou|derrotou|rejeitou|vetou|contra\s+o)\b"
 )
-# Strong governance signals: vocabulary specific to policy/administration announcements
+# Governance vocabulary: policy announcements, law enforcement operations, public programs
 RX_GOVERNANCE = re.compile(
-    r"(?i)\b(disponibilizará|disponibilizou|inaugurou|homologou|sancionou|decretou|regulamentou|"
-    r"forças.tarefa|custear|equipamentos adequados|licitação|"
-    r"beneficiári[oa]|programa nacional|programa federal|plano nacional|"
-    r"obras de|entrega de|investimento[s]? de|recursos para)\b"
+    r"(?i)\b("
+    r"disponibilizará|disponibilizou|inaugurou|homologou|sancionou|decretou|regulamentou|"
+    r"forças.{0,3}tarefa|custear|licitação|"
+    r"beneficiári[oa]|programa\s+(nacional|federal|estadual)|plano\s+nacional|"
+    r"obras\s+de|entrega\s+de|investimento[s]?\s+de|recursos\s+para|"
+    r"polícia\s+federal|mandado[s]?\s+de\s+(busca|prisão)|busca\s+e\s+apreensão|"
+    r"ministério\s+d[ao]|secretaria\s+(nacional|de)|"
+    r"coleta\s+seletiva|logística\s+reversa|reciclagem|saneamento\s+básico|"
+    r"marco\s+(legal|regulatório)|operação\s+\w+"
+    r")\b"
 )
 
 ZERO_SHOT_LABELS = [
@@ -120,7 +139,7 @@ class DiscourseClassifier:
                 if has_actor:
                     return {"label": "acusação antidemocrática", "score": 0.85}
                 return {"label": model_label, "score": model_score}
-            if has_actor and has_attribution:
+            if has_actor and has_attribution and not has_governance:
                 return {"label": "acusação antidemocrática", "score": 1.0}
             # Only fire retórica when there is no governance context
             if has_systemic_threat and not has_governance:
