@@ -145,7 +145,7 @@ def render_cloud(df: pl.DataFrame):
 
     with col1:
         target     = st.radio("Corpus Source", ["Both Candidates", "Bolsonaro", "Lula"])
-        cat_filter = st.multiselect("Focus Area", ["Rhetoric", "Accusation"], default=["Rhetoric"])
+        cat_filter = st.multiselect("Focus Area", ["Rhetoric", "Accusation"], default=["Rhetoric", "Accusation"])
 
     subset = df.filter(pl.col("chart_category").is_in(cat_filter))
     if target != "Both Candidates":
