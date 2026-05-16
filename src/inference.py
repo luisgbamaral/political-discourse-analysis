@@ -105,14 +105,16 @@ class DiscourseClassifier:
         has_direct_rhetoric  = bool(RX_DIRECT_RHETORIC.search(text))
         has_governance       = bool(RX_GOVERNANCE.search(text))
 
-        # Validated direct-authorship institutional delegitimization: fire before negation/quote checks
+        # 1. Direct authorial institutional delegitimization (very specific lexical pattern)
         if has_direct_rhetoric and not has_quote:
             return {"label": "retórica antidemocrática", "score": 0.95}
 
-        # Governance vocabulary without any attack signal: override model errors on policy posts
-        if has_governance and not has_insult and not has_systemic_threat and not has_attribution:
+        # 2. Governance vocabulary overrides insult/attribution signals — policy posts routinely
+        #    mention "organizações criminosas", "grupo criminoso", etc. as subjects, not targets
+        if has_governance and not has_systemic_threat:
             return {"label": "administração pública", "score": 0.88}
 
+        # 3. Systemic-threat / institution signals
         if has_systemic_threat or has_institution:
             if has_quote or has_negation:
                 if has_actor:
@@ -120,11 +122,13 @@ class DiscourseClassifier:
                 return {"label": model_label, "score": model_score}
             if has_actor and has_attribution:
                 return {"label": "acusação antidemocrática", "score": 1.0}
-            if has_systemic_threat:
+            # Only fire retórica when there is no governance context
+            if has_systemic_threat and not has_governance:
                 return {"label": "retórica antidemocrática", "score": 1.0}
-            if has_institution and has_insult:
+            if has_institution and has_insult and not has_governance:
                 return {"label": "retórica antidemocrática", "score": 1.0}
 
+        # 4. Bare insult directed at a political target
         if has_insult:
             return {"label": "ataques políticos", "score": 1.0}
 

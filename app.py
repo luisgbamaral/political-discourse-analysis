@@ -32,12 +32,14 @@ def setup_page():
 
 
 def _add_time_cols(df: pl.DataFrame) -> pl.DataFrame:
+    rhetoric_labels   = ["retórica antidemocrática", "Antidemocratic rhetoric"]
+    accusation_labels = ["acusação antidemocrática", "Antidemocratic accusation"]
     return df.with_columns([
         pl.col("date").dt.truncate("1mo").alias("month_date"),
         pl.col("date").dt.strftime("%m/%Y").alias("month_str"),
-        pl.when(pl.col("label") == "retórica antidemocrática")
+        pl.when(pl.col("label").is_in(rhetoric_labels))
           .then(pl.lit("Rhetoric"))
-          .when(pl.col("label") == "acusação antidemocrática")
+          .when(pl.col("label").is_in(accusation_labels))
           .then(pl.lit("Accusation"))
           .otherwise(pl.lit("Others"))
           .alias("chart_category"),
