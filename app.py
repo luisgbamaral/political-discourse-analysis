@@ -360,11 +360,10 @@ def render_findings(df_class: pl.DataFrame, df_display: pl.DataFrame):
     Peak months: Bolsonaro's accusations in **{bol_acc_peak}**, attacks in **{bol_att_peak}**;
     Lula's accusations in **{lula_acc_peak}**, attacks in **{lula_att_peak}**.
 
-    This asymmetry reflects a challenger-vs-incumbent dynamic: Bolsonaro's channel dedicated over half
-    its posts to governance updates and economic policy; Lula's channel, running against a sitting
-    president, deployed accusations and personal attacks at significantly higher rates.
-    **Hostile political discourse in this corpus is concentrated in the challenger's channel and
-    expressed primarily through accusations rather than direct rhetoric.**
+    **{att_leader}**'s channel deployed personal and competence-based attacks at a significantly
+    higher rate ({att_ratio:.1f}× the rival), targeting the opponent's fitness for office.
+    **Hostile political discourse in this corpus is concentrated in {att_leader}'s channel and
+    expressed primarily through competence-based attacks rather than direct rhetoric.**
     """)
 
 
