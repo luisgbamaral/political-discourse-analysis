@@ -294,22 +294,15 @@ def render_findings(df_class: pl.DataFrame, df_display: pl.DataFrame):
     n_word = "post" if n_rhetoric == 1 else "posts"
     qualifies = "qualifies" if n_rhetoric == 1 else "qualify"
 
+    n_label = "no posts" if n_rhetoric == 0 else f"**{n_rhetoric} {n_word}**"
+
     st.markdown(f"""
-    The original hypothesis was that the 2022 Brazilian election was heavily marked by antidemocratic
-    discourse, and the initial goal was to **detect and quantify that direct rhetoric** in the
-    official Telegram channels.
-
-    Under the AKD pipeline, XLM-R zero-shot bootstrapped labels and selected the most uncertain posts
-    for the LLM teacher's review. The LLM (`claude-opus-4-7`) systematically reviewed the
-    highest-stakes candidates (posts mentioning the electoral system, military intervention, judicial
-    delegitimization, threats to institutions) and **consistently classified them as accusations**
-    (attributing antidemocratic behavior to the opponent) rather than as direct rhetoric authored by
-    the channel itself.
-
-    Manual validation of cases that fell outside the fine-tuning sample confirmed this finding.
-    A targeted search covering epistemic attacks on the electoral system, conditional acceptance of
-    results, military mobilization language, and judicial delegitimization found **only {n_rhetoric} {n_word}**
-    that {qualifies} as direct authorial antidemocratic rhetoric across 6,950 messages:
+    The original hypothesis was that the 2022 election was heavily marked by direct antidemocratic
+    rhetoric in official channels. The AKD pipeline systematically reviewed the highest-stakes
+    posts (electoral system, military intervention, judicial delegitimization) and
+    **consistently classified them as accusations** against the opponent, not as direct authorial
+    rhetoric. Manual validation confirmed: across 6,950 messages, {n_label} {qualifies} as direct
+    authorial antidemocratic rhetoric.
     """)
 
     if n_rhetoric > 0:
@@ -317,17 +310,13 @@ def render_findings(df_class: pl.DataFrame, df_display: pl.DataFrame):
         for col, row in zip(cols, rhetoric_posts.iter_rows(named=True)):
             date_str = row["date"].strftime("%b %Y")
             col.info(f"**{date_str}**\n\n*\"{row['text_en']}\"*\n\nConfidence: {row['score']:.2f}")
-    else:
-        st.info("No posts classified as direct antidemocratic rhetoric in the current corpus.")
 
     st.markdown("""
-    **Conclusion.** Official Telegram channels, almost certainly managed by professional press
-    offices, function as governance and campaign communication platforms. Direct antidemocratic
-    rhetoric (live threats, military mobilization calls, outright electoral refusal) was a feature
-    of rallies, live broadcasts, and informal interactions that fall outside this corpus.
-    The research pivot was therefore necessary: **the phenomenon to be measured is not direct
-    rhetoric but the frequency and intensity of accusations against the adversary**, which proved
-    to be both frequent and quantifiable.
+    **Conclusion.** Official channels function as governance and campaign platforms managed by
+    professional press offices. Direct rhetoric (live threats, military mobilization, outright
+    electoral refusal) belongs to rallies and informal interactions outside this corpus.
+    The key phenomenon is not direct rhetoric but **the frequency and intensity of accusations
+    against the adversary**, which proved frequent and quantifiable.
     """)
 
     st.divider()
@@ -366,14 +355,16 @@ def render_findings(df_class: pl.DataFrame, df_display: pl.DataFrame):
     att_ratio   = max(bol_att, lula_att) / max(min(bol_att, lula_att), 0.001)
 
     st.markdown(f"""
-    **{acc_leader}** posted a higher cumulative load of antidemocratic accusations against the opponent
-    ({acc_ratio:.1f}× the rival's total). **{att_leader}** led in personal and competence-based attacks
-    ({att_ratio:.1f}×). Bolsonaro's accusation index peaked in **{bol_acc_peak}** and attacks in **{bol_att_peak}**;
-    Lula's accusation index peaked in **{lula_acc_peak}** and attacks in **{lula_att_peak}**.
+    **{acc_leader}** accumulated a higher load of antidemocratic accusations ({acc_ratio:.1f}× the rival).
+    **{att_leader}** led in personal and competence-based attacks ({att_ratio:.1f}×).
+    Peak months: Bolsonaro's accusations in **{bol_acc_peak}**, attacks in **{bol_att_peak}**;
+    Lula's accusations in **{lula_acc_peak}**, attacks in **{lula_att_peak}**.
 
-    The pattern supports the pivoted research conclusion: **while explicit antidemocratic rhetoric is
-    absent from official channels, accusations that the opponent is a threat to democracy are a
-    recurring and intensifying feature of the campaign discourse.**
+    This asymmetry reflects a challenger-vs-incumbent dynamic: Bolsonaro's channel dedicated over half
+    its posts to governance updates and economic policy; Lula's channel, running against a sitting
+    president, deployed accusations and personal attacks at significantly higher rates.
+    **Hostile political discourse in this corpus is concentrated in the challenger's channel and
+    expressed primarily through accusations rather than direct rhetoric.**
     """)
 
 
