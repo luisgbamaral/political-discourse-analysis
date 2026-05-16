@@ -1,0 +1,23 @@
+# Environment
+.env
+*.session
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Data — large binary files, not versioned
+data/raw/
+
+# Processed — parquets are small enough to version; exclude only heavy intermediaries
+data/processed/cands_*.jsonl
+data/processed/new_labels*.jsonl
+data/processed/label_dist*.json
+data/processed/finetuning_sample*.jsonl
+
+# Fine-tuned model weights
+models/
+
+# OS
+.DS_Store
