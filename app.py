@@ -60,7 +60,7 @@ def load_display_data() -> pl.DataFrame:
 
 @st.cache_data
 def load_classification_data() -> pl.DataFrame:
-    """Classification dataset — always reflects the latest inference run."""
+    """Classification dataset: always reflects the latest inference run."""
     path = CLASS_PATH if CLASS_PATH.exists() else DISPLAY_PATH
     cols = ["date", "author", "label", "score"]
     return _add_time_cols(pl.read_parquet(path, columns=cols))
@@ -71,7 +71,7 @@ def render_header():
     st.markdown("""
     ### Auditing Democracy: NLP Analysis of the 2022 Brazilian Presidential Election
 
-    The 2022 Brazilian election was defined by unprecedented polarization. This project addresses a core methodological challenge: standard sentiment analysis cannot distinguish *legitimate political opposition* from *genuinely antidemocratic rhetoric* — both read as "negative," but only one represents a systemic threat to institutions.
+    The 2022 Brazilian election was defined by unprecedented polarization. This project addresses a core methodological challenge: standard sentiment analysis cannot distinguish *legitimate political opposition* from *genuinely antidemocratic rhetoric*; both read as "negative," but only one represents a systemic threat to institutions.
 
     This pipeline classifies **6,950 posts** from the official Telegram channels of Lula and Bolsonaro (2021–2022) into **seven fine-grained categories**:
 
@@ -80,14 +80,14 @@ def render_header():
     | Retórica antidemocrática | Direct authorial attacks on democratic institutions or the electoral system |
     | Acusação antidemocrática | Attributing antidemocratic behavior to the opponent |
     | Ataques políticos | Personal, moral, or competence-based attacks on the adversary |
-    | Campanha eleitoral | Electoral campaign content — promises, rallies, endorsements |
-    | Administração pública | Governance updates — policy, public works, government acts |
+    | Campanha eleitoral | Electoral campaign content: promises, rallies, endorsements |
+    | Administração pública | Governance updates: policy, public works, government acts |
     | Política econômica | Economic policy announcements or commentary |
     | Neutro | Informational or ceremonial content with no strong political valence |
 
     The classification uses **AKD (Active Knowledge Distillation)**, which combines two principles: knowledge distillation, where a *student* model is trained to approximate a larger *teacher* (Hinton et al., 2015); and active learning, which selects only the most informative samples for labeling (Luccioli et al., 2025). In practice: (1) **XLM-R** (a multilingual model that can classify text into categories without prior examples, by comparing each post against plain-language descriptions of each class) labels the full corpus and assigns a confidence score; (2) posts where the model is least confident are sent to a frontier **LLM** (`claude-opus-4-7`) acting as *teacher*, which annotates those cases; (3) the consolidated labels fine-tune **BERTimbau**, a language model pre-trained on large volumes of Brazilian Portuguese text and specialized here on the Telegram corpus. A set of **pattern-matching rules** runs before each neural prediction to resolve authorship ambiguity: words like *disse, afirmou, declarou* signal that the channel is reporting someone else's words (accusation); negations like *não, bloqueou, impediu* signal that the channel is criticizing an action (also accusation). Without this step, the phrase *"O Bolsonaro quer invadir o STF"*, despite being identical in threat-level vocabulary to direct rhetoric, would be misclassified.
 
-    The **Antidemocratic Discourse Index (ADI)** below measures the intensity and cumulative load of hostile political discourse per candidate — separately tracking antidemocratic accusations and personal attacks, normalized by monthly volume and weighted by model confidence.
+    The **Antidemocratic Discourse Index (ADI)** below measures the intensity and cumulative load of hostile political discourse per candidate, separately tracking antidemocratic accusations and personal attacks, normalized by monthly volume and weighted by model confidence.
     """)
     st.info("Author: Luís G. B. Amaral (github.com/luisgbamaral)")
 
@@ -208,7 +208,7 @@ def render_index(df: pl.DataFrame):
         "Dividing by total posts removes the effect of posting volume: a candidate who tweets 10× more "
         "is not automatically rated higher; what matters is the *proportion* of posts dedicated to attacks.\n\n"
         "**Reading the chart:** The **bars** (left axis) show the score for each individual month. "
-        "The **lines** (right axis) show the running cumulative total since the start of the period — "
+        "The **lines** (right axis) show the running cumulative total since the start of the period; "
         "the two scales are independent and should not be compared directly. "
         "Two components are tracked separately: "
         "**Antidemocratic Accusations** (attributing antidemocratic behavior to the opponent) "
@@ -252,7 +252,7 @@ def render_index(df: pl.DataFrame):
         ))
         fig.update_layout(
             yaxis=dict(title="Monthly ADI score (bars)", side="left", showgrid=False),
-            yaxis2=dict(title="Cumulative ADI — running total (lines)", side="right", overlaying="y", showgrid=True),
+            yaxis2=dict(title="Cumulative ADI: running total (lines)", side="right", overlaying="y", showgrid=True),
             barmode="group", hovermode="x unified",
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
             height=350,
@@ -368,8 +368,8 @@ def render_findings(df_class: pl.DataFrame, df_display: pl.DataFrame):
     st.markdown(f"""
     **{acc_leader}** posted a higher cumulative load of antidemocratic accusations against the opponent
     ({acc_ratio:.1f}× the rival's total). **{att_leader}** led in personal and competence-based attacks
-    ({att_ratio:.1f}×). Both indices peak in the months immediately before the October 2022 election,
-    confirming escalation dynamics consistent with high-stakes electoral campaigns.
+    ({att_ratio:.1f}×). Bolsonaro's accusation index peaked in **{bol_acc_peak}** and attacks in **{bol_att_peak}**;
+    Lula's accusation index peaked in **{lula_acc_peak}** and attacks in **{lula_att_peak}**.
 
     The pattern supports the pivoted research conclusion: **while explicit antidemocratic rhetoric is
     absent from official channels, accusations that the opponent is a threat to democracy are a

@@ -27,7 +27,7 @@ RX_INSTITUTIONS = re.compile(
 # Direct authorial delegitimization — very specific institutional attack phrases
 RX_DIRECT_RHETORIC = re.compile(
     r"(?i)("
-    r"monocrática|imprópria\s+militância\s+política|usurpação\s+de\s+funções|"
+    r"monocrática|imprópria\s+militância\s+política|"
     r"militância\s+política.{0,20}ministro|ministro.{0,20}militância\s+política"
     r")"
 )
@@ -47,7 +47,7 @@ RX_QUOTE_VERBS = re.compile(
 )
 # Specific negation/opposition verbs — excludes bare "não" which appears in 90%+ of posts
 RX_NEGATION = re.compile(
-    r"(?i)\b(nunca|jamais|impediu|bloqueou|evitou|condenou|derrotou|rejeitou|vetou|contra\s+o)\b"
+    r"(?i)\b(nunca|jamais|impediu|bloqueou|evitou|condenou|derrotou|vetou|contra\s+o)\b"
 )
 # Governance vocabulary: policy announcements, law enforcement operations, public programs
 RX_GOVERNANCE = re.compile(
