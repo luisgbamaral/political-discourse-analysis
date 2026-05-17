@@ -294,14 +294,24 @@ def render_findings(df_class: pl.DataFrame, df_display: pl.DataFrame):
     n_word = "post" if n_rhetoric == 1 else "posts"
     qualifies = "qualifies" if n_rhetoric == 1 else "qualify"
 
-    n_label = "no posts" if n_rhetoric == 0 else f"**{n_rhetoric} {n_word}**"
+    if n_rhetoric == 0:
+        n_label = "no posts"
+        author_note = ""
+    else:
+        n_label = f"**{n_rhetoric} {n_word}**"
+        ret_authors = rhetoric_posts["author"].unique().to_list()
+        if len(ret_authors) == 1:
+            both_str = "both " if n_rhetoric > 1 else ""
+            author_note = f", {both_str}from {ret_authors[0]},"
+        else:
+            author_note = ""
 
     st.markdown(f"""
     The original hypothesis was that the 2022 election was heavily marked by direct antidemocratic
     rhetoric in official channels. The AKD pipeline systematically reviewed the highest-stakes
     posts (electoral system, military intervention, judicial delegitimization) and
     **consistently classified them as accusations** against the opponent, not as direct authorial
-    rhetoric. Manual validation confirmed: across 6,950 messages, {n_label} {qualifies} as direct
+    rhetoric. Manual validation confirmed: across 6,950 messages, {n_label}{author_note} {qualifies} as direct
     authorial antidemocratic rhetoric.
     """)
 
@@ -364,6 +374,9 @@ def render_findings(df_class: pl.DataFrame, df_display: pl.DataFrame):
     higher rate ({att_ratio:.1f}× the rival), targeting the opponent's fitness for office.
     **Hostile political discourse in this corpus is concentrated in {att_leader}'s channel and
     expressed primarily through competence-based attacks rather than direct rhetoric.**
+    This pattern is consistent with a broader dynamic observed across electoral contexts: incumbents
+    tend to highlight governance achievements and policy deliverables, while challengers are more
+    likely to question the adversary's record and fitness for office.
     """)
 
 
